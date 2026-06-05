@@ -9,9 +9,9 @@ authors = [{name = "Simon Maurer", email = "mail@maurer.systems"}]
 license = "Apache-2.0"
 license-files = ["LICENSE"]
 readme = "README.md"
-dynamic = ["version", "description"]
+dynamic = ["description"]
+dependencies = []
 
 [project.urls]
 Home = "https://github.com/mausys/pyrtipc"
 
-dependencies = []
