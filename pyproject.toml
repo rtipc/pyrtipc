@@ -1,6 +1,8 @@
 [build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+requires = ["scikit-build-core", "cython", "cython-cmake"]
+build-backend = "scikit_build_core.build"
+
+
 
 [project]
 name = "pyrtipc"
@@ -14,4 +16,3 @@ dependencies = []
 
 [project.urls]
 Home = "https://github.com/mausys/pyrtipc"
-
