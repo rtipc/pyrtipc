@@ -8,7 +8,7 @@ find_package(Cython MODULE REQUIRED VERSION 3.0)
 include(UseCython)
 
 set(RTIPC_INSTALL_DIR ${CMAKE_CURRENT_BINARY_DIR}/rtipc-install)
-set(SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/pyrtipc) 
+set(SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/pyrtipc) 
 
 ExternalProject_Add(
   rtipc
@@ -27,7 +27,7 @@ set(CMAKE_C_STANDARD 11)
 
 option(RTIPC_BUILD_EXAMPLES "Build examples" OFF)
 
-cython_transpile(${SRC_DIR}/rtipc.pyx LANGUAGE C CYTHON_ARGS -I ${SRC_DIR} OUTPUT_VARIABLE rtipc_c)
+cython_transpile(${SRC_DIR}/rtipc.py LANGUAGE C CYTHON_ARGS -I ${SRC_DIR} OUTPUT_VARIABLE rtipc_c)
 
 python_add_library(pyrtipc MODULE "${rtipc_c}" WITH_SOABI)
 
@@ -36,5 +36,5 @@ add_dependencies(pyrtipc rtipc)
 target_include_directories(pyrtipc PRIVATE ${RTIC_INCLUDE_DIR})
 
 
-install(TARGETS pyrtipc DESTINATION .)
+install(TARGETS pyrtipc LIBRARY DESTINATION .)
 

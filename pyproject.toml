@@ -2,8 +2,6 @@
 requires = ["scikit-build-core", "cython", "cython-cmake"]
 build-backend = "scikit_build_core.build"
 
-
-
 [project]
 name = "pyrtipc"
 version = "0.0.0"
@@ -16,3 +14,11 @@ dependencies = []
 
 [project.urls]
 Home = "https://github.com/mausys/pyrtipc"
+
+[tool]
+[tool.pyside6-project]
+files = [
+    "src/pyrtipc/crtipc.c",
+    "src/pyrtipc/crtipc.pxd",
+    "src/pyrtipc/rtipc.pyx",
+]
