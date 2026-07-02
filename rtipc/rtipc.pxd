@@ -1,4 +1,4 @@
-cdef extern from "<rtipc.h>":
+cdef extern from "<rtipc/rtipc.h>":
     cdef enum ri_try_push_result:
         RI_TRY_PUSH_RESULT_ERROR = -2
         RI_TRY_PUSH_RESULT_FAIL = -1
@@ -24,16 +24,16 @@ cdef extern from "<rtipc.h>":
         const void* data
     ctypedef ri_info ri_info_t
     
-    cdef struct ri_channel:
+    cdef struct ri_attr:
         size_t msg_size
         unsigned int add_msgs
         bint eventfd
         ri_info_t info
-    ctypedef ri_channel ri_channel_t
+    ctypedef ri_attr ri_attr_t
     
     cdef struct ri_config:
-        ri_channel_t* consumers
-        ri_channel_t* producers
+        ri_attr_t* consumers
+        ri_attr_t* producers
         ri_info_t info
     ctypedef ri_config ri_config_t
     
@@ -49,11 +49,6 @@ cdef extern from "<rtipc.h>":
     cdef struct ri_consumer:
         pass
     ctypedef ri_consumer ri_consumer_t
-    
-    cdef struct ri_server:
-        pass
-    ctypedef ri_server ri_server_t
-  
     
     ri_vector_t* ri_vector_new(ri_config_t*)
     void ri_vector_delete(ri_vector_t*)
@@ -89,6 +84,14 @@ cdef extern from "<rtipc.h>":
     ri_info_t ri_producer_info(ri_producer_t*)
     void ri_producer_free_info(ri_producer_t*)
   
+    
+
+
+cdef extern from "<rtipc/connect.h>":
+    cdef struct ri_server:
+        pass
+    ctypedef ri_server ri_server_t
+    
     ri_server_t* ri_server_new(const char*, int)
     void ri_server_delete(ri_server_t*)
     int ri_server_socket(ri_server_t*)
@@ -97,5 +100,3 @@ cdef extern from "<rtipc.h>":
     ri_vector_t* ri_server_accept(ri_server_t*, ri_filter_fn, void*)
     ri_vector_t* ri_client_socket_connect(int, ri_config_t*)
     ri_vector_t* ri_client_connect(const char*, ri_config_t*)
-
-

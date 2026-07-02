@@ -4,21 +4,17 @@ build-backend = "scikit_build_core.build"
 
 [project]
 name = "pyrtipc"
-version = "0.0.0"
+version = "0.0.1"
 authors = [{name = "Simon Maurer", email = "mail@maurer.systems"}]
 license = "Apache-2.0"
 license-files = ["LICENSE"]
 readme = "README.md"
-dynamic = ["description"]
-dependencies = []
+#dynamic = ["description"]
 
 [project.urls]
-Home = "https://github.com/mausys/pyrtipc"
+Homepage = "https://rtipc.github.io"
+Repository = "https://github.com/rtipc/pyrtipc"
 
-[tool]
-[tool.pyside6-project]
-files = [
-    "src/pyrtipc/crtipc.c",
-    "src/pyrtipc/crtipc.pxd",
-    "src/pyrtipc/rtipc.pyx",
-]
+[tool.scikit-build]
+editable.mode = "inplace"
+
