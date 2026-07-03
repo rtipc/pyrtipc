@@ -52,6 +52,7 @@ cdef extern from "<rtipc/rtipc.h>":
     
     ri_vector_t* ri_vector_new(ri_config_t*)
     void ri_vector_delete(ri_vector_t*)
+    size_t ri_vector_serialize_size(const ri_vector_t*)
     int ri_vector_serialize(ri_vector_t*, void*, size_t, int[], unsigned int*)
     ri_vector_t* ri_vector_deserialize(const void*, size_t, int[], unsigned int*)
 	

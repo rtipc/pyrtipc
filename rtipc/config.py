@@ -4,6 +4,7 @@ from dataclasses import dataclass
 class MqAttr:
     add_msgs: int
     msg_size: int
+    eventfd: bool
     info: bytes
 
 
