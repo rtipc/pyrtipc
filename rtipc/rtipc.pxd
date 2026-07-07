@@ -24,23 +24,23 @@ cdef extern from "<rtipc/rtipc.h>":
         const void* data
     ctypedef ri_info ri_info_t
     
-    cdef struct ri_attr:
+    cdef struct ri_channel_attr:
         size_t msg_size
         unsigned int add_msgs
         bint eventfd
         ri_info_t info
-    ctypedef ri_attr ri_attr_t
+    ctypedef ri_channel_attr ri_channel_attr_t
     
-    cdef struct ri_config:
-        ri_attr_t* consumers
-        ri_attr_t* producers
+    cdef struct ri_group_attr:
+        ri_channel_attr_t* consumers
+        ri_channel_attr_t* producers
         ri_info_t info
-    ctypedef ri_config ri_config_t
+    ctypedef ri_group_attr ri_group_attr_t
     
 
-    cdef struct ri_vector:
+    cdef struct ri_group:
         pass
-    ctypedef ri_vector ri_vector_t
+    ctypedef ri_group ri_group_t
 
     cdef struct ri_producer:
         pass
@@ -50,19 +50,19 @@ cdef extern from "<rtipc/rtipc.h>":
         pass
     ctypedef ri_consumer ri_consumer_t
     
-    ri_vector_t* ri_vector_new(ri_config_t*)
-    void ri_vector_delete(ri_vector_t*)
-    size_t ri_vector_serialize_size(const ri_vector_t*)
-    int ri_vector_serialize(ri_vector_t*, void*, size_t, int[], unsigned int*)
-    ri_vector_t* ri_vector_deserialize(const void*, size_t, int[], unsigned int*)
+    ri_group_t* ri_group_from_attr(ri_group_attr_t*)
+    void ri_group_delete(ri_group_t*)
+    size_t ri_group_serialize_size(const ri_group_t*)
+    int ri_group_serialize(ri_group_t*, void*, size_t, int[], unsigned int*)
+    ri_group_t* ri_group_deserialize(const void*, size_t, int[], unsigned int*)
 	
-    ri_info_t ri_vector_info(ri_vector_t*)
-    unsigned int ri_vector_num_consumers(ri_vector_t*)
-    unsigned int ri_vector_num_producers(ri_vector_t*)
-    ri_consumer_t* ri_vector_take_consumer(ri_vector_t*, unsigned int)
-    ri_producer_t* ri_vector_take_producer(ri_vector_t*, unsigned int)
+    ri_info_t ri_group_info(ri_group_t*)
+    unsigned int ri_group_num_consumers(ri_group_t*)
+    unsigned int ri_group_num_producers(ri_group_t*)
+    ri_consumer_t* ri_group_acquire_consumer(ri_group_t*, unsigned int)
+    ri_producer_t* ri_group_acquire_producer(ri_group_t*, unsigned int)
     
-    void ri_consumer_delete(ri_consumer_t*)
+    void ri_consumer_release(ri_consumer_t*)
     const void* ri_consumer_msg(ri_consumer_t*)
     ri_pop_result_t ri_consumer_pop(ri_consumer_t*)
     ri_pop_result_t ri_consumer_flush(ri_consumer_t*)
@@ -73,7 +73,7 @@ cdef extern from "<rtipc/rtipc.h>":
     void ri_consumer_free_info(ri_consumer_t*)
     
     
-    void ri_producer_delete(ri_producer_t*)
+    void ri_producer_release(ri_producer_t*)
     void* ri_producer_msg(ri_producer_t*)
     ri_force_push_result_t ri_producer_force_push(ri_producer_t*)
     ri_try_push_result_t ri_producer_try_push(ri_producer_t*)
@@ -96,8 +96,8 @@ cdef extern from "<rtipc/connect.h>":
     ri_server_t* ri_server_new(const char*, int)
     void ri_server_delete(ri_server_t*)
     int ri_server_socket(ri_server_t*)
-    ctypedef bint (*ri_filter_fn)(ri_vector_t*, void*)
-    ri_vector_t* ri_server_socket_accept(int, ri_filter_fn, void*)
-    ri_vector_t* ri_server_accept(ri_server_t*, ri_filter_fn, void*)
-    ri_vector_t* ri_client_socket_connect(int, ri_config_t*)
-    ri_vector_t* ri_client_connect(const char*, ri_config_t*)
+    ctypedef bint (*ri_filter_fn)(ri_group_attr_t*, void*)
+    ri_group_t* ri_server_socket_accept(int, ri_filter_fn, void*)
+    ri_group_t* ri_server_accept(ri_server_t*, ri_filter_fn, void*)
+    ri_group_t* ri_client_socket_connect(int, ri_group_attr_t*)
+    ri_group_t* ri_client_connect(const char*, ri_group_attr_t*)

@@ -3,10 +3,10 @@ from ctypes import Structure as CStructure, Union as CUnion
 
 from pathlib import Path
 
-from .config import MqAttr, VectorConfig
+from .attr import ChannelAttr, GroupAttr
 
 
-from .rtipc_wrapper import CChannelVector, CProducer, CConsumer, CServer
+from .rtipc_wrapper import CChannelGroup, CProducer, CConsumer, CServer
 
 T = TypeVar("T", CStructure, CUnion)
 
@@ -20,20 +20,21 @@ class Consumer(Generic[T]):
     def __init__(self, c_consumer: CConsumer):
         self.c_consumer = c_consumer
 
-class ChannelVector(object):
-    def __init__(self, c_vec: CChannelVector):
-        self.c_vec = c_vec
+class ChannelGroup(object):
+    def __init__(self, c_grp: CChannelGroup):
+        self.c_grp = c_grp
         
     @classmethod
-    def fromconfig(cls, config: VectorConfig) -> ChannelVector:
-        c_vec = CChannelVector.fromconfig(config);
-        return cls(c_vec)
+    def from_attr(cls, attr: GroupAttr) -> ChannelGroup:
+        c_grp = ChannelGroup.from_attr(attr);
+        return cls(c_grp)
+        
     @classmethod
     def deserialize(cls, config: VectorConfig):
         pass
     
     def serialize(self):
-        return self.c_vec.serialize()
+        return self.c_grp.serialize()
     
     def take_producer[T](self, index: int) -> Producer[T]:
         pass
@@ -45,6 +46,6 @@ class Server(object):
     def __init__(self, path: Path):
         self.c_server = CChannelVector(path)
         
-    def accept(self) -> ChannelVector:
-        c_vec = self.c_server.accept();
-        return ChannelVector(c_vec)
+    def accept(self) -> ChannelGroup:
+        c_grp = self.c_server.accept();
+        return ChannelGroup(c_grp)

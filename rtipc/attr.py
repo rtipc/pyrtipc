@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 @dataclass
-class MqAttr:
+class ChannelAttr:
     add_msgs: int
     msg_size: int
     eventfd: bool
@@ -9,7 +9,7 @@ class MqAttr:
 
 
 @dataclass
-class VectorConfig:
+class GroupAttr:
     consumers: list[MqAttr]
     producers: list[MqAttr]
     info: bytes

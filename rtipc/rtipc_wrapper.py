@@ -10,7 +10,7 @@ from cython.cimports.libc.string import memcpy
 
 from cython.cimports import rtipc
 
-from .config import MqAttr, VectorConfig
+from .attr import ChannelAttr, GroupAttr
 
 
 @cython.cclass
@@ -37,46 +37,46 @@ class CInfo:
 
 
 @cython.cclass
-class CVectorConfig:
-    _c_attrs: cython.pointer[rtipc.ri_attr_t]
-    c_config: rtipc.ri_config_t
+class CGroupAttr:
+    _c_chnl_attrs: cython.pointer[rtipc.ri_channel_attr_t]
+    c_grp_attr: rtipc.ri_group_attr_t
 
     def __cinit__(self):
-        self._c_attrs = cython.NULL
-        #self.c_config = 0
+        self._c_chnl_attrs = cython.NULL
 
-    def __init__(self, config: VectorConfig):
-        n_consumers = len(config.consumers)
-        n_producers = len(config.producers)
+
+    def __init__(self, grp_attr: GroupAttr):
+        n_consumers = len(grp_attr.consumers)
+        n_producers = len(grp_attr.producers)
 
         n_channels = n_consumers + n_producers + 2
 
-        self._c_attrs = cython.cast(
-            cython.pointer[rtipc.ri_attr_t],
-            PyMem_Calloc(n_channels, cython.sizeof(rtipc.ri_attr_t)),
+        self._c_chnl_attrs = cython.cast(
+            cython.pointer[rtipc.ri_channel_attr_t],
+            PyMem_Calloc(n_channels, cython.sizeof(rtipc.ri_channel_attr_t)),
         )
 
-        if not self._c_attrs:
+        if not self._c_channel_attrs:
             raise MemoryError()
 
-        consumers: cython.pointer[rtipc.ri_attr_t] = cython.address(
-            self._c_attrs[0]
+        consumers: cython.pointer[rtipc.ri_channel_attr_t] = cython.address(
+            self._c_chnl_attrs[0]
         )
-        producers: cython.pointer[rtipc.ri_attr_t] = cython.address(
-            self._c_attrs[n_consumers + 1]
+        producers: cython.pointer[rtipc.ri_channel_attr_t] = cython.address(
+            self._c_chnl_attrs[n_consumers + 1]
         )
 
-        vinfo_ptr: cython.p_char = config.info
+        grp_info_ptr: cython.p_char = grp_attr.info
 
-        self.c_config = rtipc.ri_config_t(
+        self.c_grp_attr = rtipc.ri_group_attr_t(
             consumers=consumers,
             producers=producers,
-            info = rtipc.ri_info_t(size=len(config.info), data=vinfo_ptr),
+            info = rtipc.ri_info_t(size=len(grp_attr.info), data=grp_info_ptr),
         )
 
-        for i, attr in enumerate(config.consumers):
+        for i, attr in enumerate(grp_attr.consumers):
             info_ptr: cython.p_char = attr.info
-            c_attr: cython.pointer[rtipc.ri_attr_t] = cython.address(
+            c_attr: cython.pointer[rtipc.ri_channel_attr_t] = cython.address(
                 consumers[i]
             )
             c_attr.add_msgs = attr.add_msgs
@@ -85,9 +85,9 @@ class CVectorConfig:
             c_attr.info.size = len(attr.info)
             c_attr.info.data = info_ptr
 
-        for i, attr in enumerate(config.producers):
+        for i, attr in enumerate(grp_attr.producers):
             info_ptr: cython.p_char = attr.info
-            c_attr: cython.pointer[rtipc.ri_attr_t] = cython.address(
+            c_attr: cython.pointer[rtipc.ri_channel_attr_t] = cython.address(
                 producers[i]
             )
             c_attr.add_msgs = attr.add_msgs
@@ -97,32 +97,32 @@ class CVectorConfig:
             c_attr.info.data = info_ptr
 
     def __dealloc__(self):
-        if self._c_attrs is not cython.NULL:
-            PyMem_Free(self._c_attrs)
+        if self._c_chnl_attrs is not cython.NULL:
+            PyMem_Free(self._c_chnl_attrs)
 
 
 
 
 @cython.cclass
-class CChannelVector:
-    _c_vector: cython.pointer[rtipc.ri_vector_t]
+class CChannelGroup:
+    _c_group: cython.pointer[rtipc.ri_group_t]
 
     def __cinit__(self):
-        self._c_vector = cython.NULL
+        self._c_group = cython.NULL
 
     def __dealloc__(self):
-        if self._c_vector is not cython.NULL:
-            rtipc.ri_vector_delete(self._c_vector)
+        if self._c_group is not cython.NULL:
+            rtipc.ri_group_delete(self._c_group)
 
 
     @staticmethod
-    def fromconfig(config: VectorConfig):
-        cconfig = CVectorConfig(config)
-        vec = CChannelVector()
-        vec._c_vector = rtipc.ri_vector_new(cython.address(cconfig.c_config))
-        if vec._c_vector is cython.NULL:
+    def from_attr(attr: GroupAttr):
+        cattr = CGroupAttr(attr)
+        grp = CChannelGroup()
+        grp._c_group = rtipc.ri_group_from_attr(cython.address(cattr.c_grp_attr))
+        if grp._c_group is cython.NULL:
             raise RuntimeError()
-        return vec
+        return grp
 
     @staticmethod
     def deserialize(req: bytes, fds: int[:]):
@@ -137,16 +137,16 @@ class CChannelVector:
 
         req_ptr = cython.cast(cython.p_void, req)
 
-        vec = CChannelVector()
-        vec._c_vector = rtipc.ri_vector_deserialize(req_ptr, len(req), fds_ptr, n_fds_ptr)
-        if vec._c_vector is cython.NULL:
+        grp = CChannelGroup()
+        grp._c_group = rtipc.ri_group_deserialize(req_ptr, len(req), fds_ptr, n_fds_ptr)
+        if grp._c_group is cython.NULL:
             raise RuntimeError()
-        return vec
+        return grp
 
     def serialize(self) -> tuple(bytes, array.array):
-        if self._c_vector is cython.NULL:
+        if self._c_group is cython.NULL:
             raise RuntimeError()
-        size: cython.size_t  = rtipc.ri_vector_serialize_size(self._c_vector)
+        size: cython.size_t  = rtipc.ri_group_serialize_size(self._c_group)
         req = bytearray(size)
         req_ptr: cython.p_char = req
         fds = array.array('i', [-1] * 253)
@@ -154,19 +154,19 @@ class CChannelVector:
         n_fds_ptr = cython.address(n_fds)
         cfds: cython.int[:] = fds
         cfds_ptr: cython.p_int = cython.address(cfds[0])
-        r =  rtipc.ri_vector_serialize(self._c_vector, req_ptr, size, cfds_ptr, n_fds_ptr)
+        r =  rtipc.ri_group_serialize(self._c_group, req_ptr, size, cfds_ptr, n_fds_ptr)
         if r < 0:
             raise RuntimeError()
             
         return (req, fds[0:n_fds])
 
 
-    def take_consumer(self, index: int):
-        if self._c_vector is cython.NULL:
+    def acquire_consumer(self, index: int):
+        if self._c_group is cython.NULL:
             raise RuntimeError()
 
-    def take_producer(self, index: int):
-        if self._c_vector is cython.NULL:
+    def acquire_producer(self, index: int):
+        if self._c_group is cython.NULL:
             raise RuntimeError()
 
 
@@ -180,7 +180,7 @@ class CProducer:
 
     def __dealloc__(self):
         if self._c_producer is not cython.NULL:
-            rtipc.ri_producer_delete(self._c_producer)
+            rtipc.ri_producer_release(self._c_producer)
 
     def try_push(self) -> rtipc.ri_try_push_result_t:
         if self._c_producer is cython.NULL:
@@ -202,7 +202,7 @@ class CConsumer:
 
     def __dealloc__(self):
         if self._c_consumer is not cython.NULL:
-            rtipc.ri_consumer_delete(self._c_consumer)
+            rtipc.ri_consumer_release(self._c_consumer)
 
     def pop(self) -> rtipc.ri_pop_result_t:
         if self._c_consumer is cython.NULL:
@@ -225,12 +225,12 @@ class CServer:
         if self._c_server is not cython.NULL:
             rtipc.ri_server_delete(self._c_server)
 
-    def accept(self) -> CChannelVector:
-        vec = CChannelVector()
-        vec._c_vector = rtipc.ri_server_accept(self._c_server, cython.NULL, cython.NULL)
-        if vec._c_vector is cython.NULL:
+    def accept(self) -> CChannelGroup:
+        grp = CChannelGroup()
+        grp._c_group = rtipc.ri_server_accept(self._c_server, cython.NULL, cython.NULL)
+        if grp._c_group is cython.NULL:
             raise RuntimeError()
-        return vec
+        return grp
 
 
 

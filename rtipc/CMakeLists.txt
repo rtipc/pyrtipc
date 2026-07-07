@@ -26,7 +26,7 @@ install(
 install(
   FILES
     __init__.py
-    config.py
+    attr.py
     rtipc.pxd
   DESTINATION
     pyrtipc
