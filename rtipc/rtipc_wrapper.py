@@ -15,25 +15,16 @@ from .attr import ChannelAttr, GroupAttr
 
 @cython.cclass
 class CInfo:
-    data: cython.p_char
+    data: cython.p_void
     size: cython.size_t
 
-    def __cinit__(self):
-        self.data = cython.NULL
 
-
-    def __init__(self, info: bytes):
-        self.size = len(info)
-        self.data = cython.cast(cython.p_char, PyMem_Malloc(self.size))
-        if not self.data:
-            raise MemoryError()
-
-        ptr: cython.p_char = info
-        memcpy(self.data, ptr, self.size)
-
-    def __dealloc__(self):
-        if self.data is not cython.NULL:
-           PyMem_Free(self.data)
+def info_to_bytes(info: CInfo) -> bytes:
+    if info.size > 0:
+        char_ptr = cython.cast(cython.p_char, info.data)
+        return char_ptr[:info.size]
+    else:
+        return bytes()
 
 
 @cython.cclass
@@ -56,7 +47,7 @@ class CGroupAttr:
             PyMem_Calloc(n_channels, cython.sizeof(rtipc.ri_channel_attr_t)),
         )
 
-        if not self._c_channel_attrs:
+        if not self._c_chnl_attrs:
             raise MemoryError()
 
         consumers: cython.pointer[rtipc.ri_channel_attr_t] = cython.address(
@@ -116,7 +107,7 @@ class CChannelGroup:
 
 
     @staticmethod
-    def from_attr(attr: GroupAttr):
+    def from_attr(attr: GroupAttr) -> CChannelGroup:
         cattr = CGroupAttr(attr)
         grp = CChannelGroup()
         grp._c_group = rtipc.ri_group_from_attr(cython.address(cattr.c_grp_attr))
@@ -125,7 +116,7 @@ class CChannelGroup:
         return grp
 
     @staticmethod
-    def deserialize(req: bytes, fds: int[:]):
+    def deserialize(req: bytes, fds: int[:]) -> CChannelGroup:
         n_fds: cython.uint  = len(fds)
 
         n_fds_ptr: cython.p_uint = cython.address(
@@ -159,15 +150,68 @@ class CChannelGroup:
             raise RuntimeError()
             
         return (req, fds[0:n_fds])
-
-
-    def acquire_consumer(self, index: int):
+        
+    def get_attr(self) -> GroupAttr:
         if self._c_group is cython.NULL:
             raise RuntimeError()
+        c_attr = rtipc.ri_group_get_attr(self._c_group)
+        
+        
+        consumers = []
+        for i in range(0,  rtipc.ri_group_num_consumers(self._c_group)):
+            c_chn_attr = c_attr.consumers[i]
+            c_info = CInfo()
+            c_info.size = c_chn_attr.info.size
+            c_info.data = c_chn_attr.info.data
+            chn_attr = ChannelAttr(c_chn_attr.add_msgs, c_chn_attr.msg_size, c_chn_attr.eventfd, info_to_bytes(c_info))
+            consumers.append(chn_attr)
 
-    def acquire_producer(self, index: int):
+    
+        producers = []
+        for i in range(0, rtipc.ri_group_num_producers(self._c_group)):
+            c_chn_attr = c_attr.producers[i]
+            c_info = CInfo()
+            c_info.size = c_chn_attr.info.size
+            c_info.data = c_chn_attr.info.data
+            chn_attr = ChannelAttr(c_chn_attr.add_msgs, c_chn_attr.msg_size, c_chn_attr.eventfd, info_to_bytes(c_info))
+            producers.append(chn_attr)
+        
+        c_info = CInfo()
+        c_info.size = c_attr.info.size
+        c_info.data = c_attr.info.data
+        grp_info = info_to_bytes(c_info)
+        
+        return GroupAttr(consumers, producers, grp_info)
+            
+
+    def num_consumers(self) -> int:
         if self._c_group is cython.NULL:
             raise RuntimeError()
+        return rtipc.ri_group_num_consumers(self._c_group)
+        
+    def num_producers(self) -> int:
+        if self._c_group is cython.NULL:
+            raise RuntimeError()
+        return rtipc.ri_group_num_producers(self._c_group)
+
+    def acquire_consumer(self, index: int) -> CConsumer:
+        if self._c_group is cython.NULL:
+            raise RuntimeError()
+        consumer = CConsumer()
+        consumer._c_consumer = rtipc.ri_group_acquire_consumer(self._c_group, index)
+        if consumer._c_consumer is cython.NULL:
+            raise RuntimeError()
+        return consumer
+        
+
+    def acquire_producer(self, index: int) -> CProducer:
+        if self._c_group is cython.NULL:
+            raise RuntimeError()
+        producer = CProducer()
+        producer._c_producer = rtipc.ri_group_acquire_producer(self._c_group, index)
+        if producer._c_producer is cython.NULL:
+            raise RuntimeError()
+        return producer
 
 
 

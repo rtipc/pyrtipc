@@ -26,12 +26,16 @@ class ChannelGroup(object):
         
     @classmethod
     def from_attr(cls, attr: GroupAttr) -> ChannelGroup:
-        c_grp = ChannelGroup.from_attr(attr);
+        c_grp = CChannelGroup.from_attr(attr);
         return cls(c_grp)
         
     @classmethod
-    def deserialize(cls, config: VectorConfig):
-        pass
+    def deserialize(cls, req: bytes, fds: int[:]) -> ChannelGroup:
+        c_grp = CChannelGroup.deserialize(req, fds);
+        return cls(c_grp)
+    
+    def get_attr(self) -> GroupAttr:
+        return self.c_grp.get_attr();
     
     def serialize(self):
         return self.c_grp.serialize()

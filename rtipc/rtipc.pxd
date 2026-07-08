@@ -52,6 +52,7 @@ cdef extern from "<rtipc/rtipc.h>":
     
     ri_group_t* ri_group_from_attr(ri_group_attr_t*)
     void ri_group_delete(ri_group_t*)
+    ri_group_attr_t ri_group_get_attr(const ri_group_t*);
     size_t ri_group_serialize_size(const ri_group_t*)
     int ri_group_serialize(ri_group_t*, void*, size_t, int[], unsigned int*)
     ri_group_t* ri_group_deserialize(const void*, size_t, int[], unsigned int*)

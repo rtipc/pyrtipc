@@ -10,6 +10,6 @@ class ChannelAttr:
 
 @dataclass
 class GroupAttr:
-    consumers: list[MqAttr]
-    producers: list[MqAttr]
+    consumers: list[ChannelAttr]
+    producers: list[ChannelAttr]
     info: bytes
