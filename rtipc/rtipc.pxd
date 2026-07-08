@@ -96,7 +96,7 @@ cdef extern from "<rtipc/connect.h>":
     ri_server_t* ri_server_new(const char*, int)
     void ri_server_delete(ri_server_t*)
     int ri_server_socket(ri_server_t*)
-    ctypedef bint (*ri_filter_fn)(ri_group_attr_t*, void*)
+    ctypedef bint (*ri_filter_fn)(ri_group_attr_t*, unsigned int, unsigned int, void*)
     ri_group_t* ri_server_socket_accept(int, ri_filter_fn, void*)
     ri_group_t* ri_server_accept(ri_server_t*, ri_filter_fn, void*)
     ri_group_t* ri_client_socket_connect(int, ri_group_attr_t*)
