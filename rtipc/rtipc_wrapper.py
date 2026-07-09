@@ -7,12 +7,20 @@ import cython
 from cython.cimports.cpython.mem import PyMem_Malloc, PyMem_Calloc, PyMem_Free
 from cython.cimports.cpython import array as carray
 from cython.cimports.libc.string import memcpy
-from cython.cimports.cpython.bytearray import PyByteArray_FromStringAndSize as bytearray_from_string_and_size
+from cython.cimports.cython.view import array as cvarray
 
 from cython.cimports import rtipc
 
 from .attr import ChannelAttr, GroupAttr
 
+
+def get_memoryview(c_ptr: cython.pointer(cython.char), size: cython.int):
+    arr = cvarray(shape=(size,), itemsize=1, format="B", mode="c", allocate_buffer=False)
+    arr.data = cython.cast(cython.pointer(cython.char), c_ptr)
+    
+    arr_view = cython.declare(cython.char[:], arr)
+    
+    return arr_view
 
 @cython.cclass
 class CInfo:
@@ -117,7 +125,7 @@ class CChannelGroup:
         return grp
 
     @staticmethod
-    def deserialize(req: bytes, fds: int[:]) -> CChannelGroup:
+    def deserialize(req: bytes, fds: array.array) -> CChannelGroup:
         n_fds: cython.uint  = len(fds)
 
         n_fds_ptr: cython.p_uint = cython.address(
@@ -127,15 +135,15 @@ class CChannelGroup:
         cfds = cython.declare(carray.array, fds)
         fds_ptr = cython.cast(cython.p_int, cfds.data.as_voidptr)
 
-        req_ptr = cython.cast(cython.p_void, req)
-
+        req_ptr = cython.cast(cython.p_char, req)
+        
         grp = CChannelGroup()
         grp._c_group = rtipc.ri_group_deserialize(req_ptr, len(req), fds_ptr, n_fds_ptr)
         if grp._c_group is cython.NULL:
             raise RuntimeError()
         return grp
 
-    def serialize(self) -> tuple(bytes, array.array):
+    def serialize(self) -> tuple(bytearray, array.array):
         if self._c_group is cython.NULL:
             raise RuntimeError()
         size: cython.size_t  = rtipc.ri_group_serialize_size(self._c_group)
@@ -232,7 +240,7 @@ class CProducer:
             raise RuntimeError()
         return rtipc.ri_producer_msg_size(self._c_producer)
     
-    def current_msg(self) -> bytearray:
+    def current_msg(self):
         if self._c_producer is cython.NULL:
             raise RuntimeError()
             
@@ -241,9 +249,10 @@ class CProducer:
             return None
             
         msg_size = rtipc.ri_producer_msg_size(self._c_producer)
-        msg_char_ptr = cython.cast(cython.p_char, msg_ptr)
+        msg_char_ptr = cython.cast(cython.pointer(cython.char), msg_ptr)
         
-        return bytearray_from_string_and_size(msg_char_ptr, msg_size)
+        return get_memoryview(msg_char_ptr, msg_size)
+    
         
     def try_push(self) -> rtipc.ri_try_push_result_t:
         if self._c_producer is cython.NULL:
@@ -278,7 +287,7 @@ class CConsumer:
             raise RuntimeError()
         return rtipc.ri_consumer_pop(self._c_consumer)
     
-    def current_msg(self) -> bytearray:
+    def current_msg(self):
         if self._c_consumer is cython.NULL:
             raise RuntimeError()
             
@@ -288,7 +297,8 @@ class CConsumer:
             
         msg_size = rtipc.ri_consumer_msg_size(self._c_consumer)
         msg_char_ptr = cython.cast(cython.p_char, msg_ptr)
-        ba = bytearray_from_string_and_size(msg_char_ptr, msg_size)
+        
+        return get_memoryview(msg_char_ptr, msg_size)
 
     def get_eventfd(self) -> int:
         if self._c_consumer is cython.NULL:

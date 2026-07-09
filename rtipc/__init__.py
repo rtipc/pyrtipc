@@ -21,8 +21,14 @@ class Producer(Generic[T]):
             return None
         return self.cls.from_buffer(msg)
         
+    def try_push(self):
+        return self.c_producer.try_push()
+        
+    def force_push(self):
+        return self.c_producer.force_push()
+        
 class Consumer(Generic[T]):
-    def __init__(self, c_consumer: CConsumer, cls: type[T],):
+    def __init__(self, c_consumer: CConsumer, cls: type[T]):
         self.c_consumer = c_consumer
         self.cls = cls
         
@@ -31,7 +37,13 @@ class Consumer(Generic[T]):
         if msg is None:
             return None
         return self.cls.from_buffer(msg)
-
+        
+    def pop(self):
+        return self.c_consumer.pop()
+    
+    def flush(self):
+        return self.c_consumer.pop()
+    
 class ChannelGroup(object):
     def __init__(self, c_grp: CChannelGroup):
         self.c_grp = c_grp
