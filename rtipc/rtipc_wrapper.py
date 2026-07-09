@@ -7,6 +7,7 @@ import cython
 from cython.cimports.cpython.mem import PyMem_Malloc, PyMem_Calloc, PyMem_Free
 from cython.cimports.cpython import array as carray
 from cython.cimports.libc.string import memcpy
+from cython.cimports.cpython.bytearray import PyByteArray_FromStringAndSize as bytearray_from_string_and_size
 
 from cython.cimports import rtipc
 
@@ -226,6 +227,24 @@ class CProducer:
         if self._c_producer is not cython.NULL:
             rtipc.ri_producer_release(self._c_producer)
 
+    def msg_size(self) -> int:
+        if self._c_producer is cython.NULL:
+            raise RuntimeError()
+        return rtipc.ri_producer_msg_size(self._c_producer)
+    
+    def current_msg(self) -> bytearray:
+        if self._c_producer is cython.NULL:
+            raise RuntimeError()
+            
+        msg_ptr = rtipc.ri_producer_msg(self._c_producer)
+        if msg_ptr is cython.NULL:
+            return None
+            
+        msg_size = rtipc.ri_producer_msg_size(self._c_producer)
+        msg_char_ptr = cython.cast(cython.p_char, msg_ptr)
+        
+        return bytearray_from_string_and_size(msg_char_ptr, msg_size)
+        
     def try_push(self) -> rtipc.ri_try_push_result_t:
         if self._c_producer is cython.NULL:
             raise RuntimeError()
@@ -248,12 +267,33 @@ class CConsumer:
         if self._c_consumer is not cython.NULL:
             rtipc.ri_consumer_release(self._c_consumer)
 
+    def msg_size(self) -> int:
+        if self._c_consumer is cython.NULL:
+            raise RuntimeError()
+        return rtipc.ri_consumer_msg_size(self._c_consumer)
+
+
     def pop(self) -> rtipc.ri_pop_result_t:
         if self._c_consumer is cython.NULL:
             raise RuntimeError()
         return rtipc.ri_consumer_pop(self._c_consumer)
+    
+    def current_msg(self) -> bytearray:
+        if self._c_consumer is cython.NULL:
+            raise RuntimeError()
+            
+        msg_ptr = rtipc.ri_consumer_msg(self._c_consumer)
+        if msg_ptr is cython.NULL:
+            return None
+            
+        msg_size = rtipc.ri_consumer_msg_size(self._c_consumer)
+        msg_char_ptr = cython.cast(cython.p_char, msg_ptr)
+        ba = bytearray_from_string_and_size(msg_char_ptr, msg_size)
 
-
+    def get_eventfd(self) -> int:
+        if self._c_consumer is cython.NULL:
+            raise RuntimeError()
+            
 @cython.cclass
 class CServer:
     _c_server: cython.pointer[rtipc.ri_server_t]

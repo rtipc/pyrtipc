@@ -70,8 +70,6 @@ cdef extern from "<rtipc/rtipc.h>":
     size_t ri_consumer_msg_size(ri_consumer_t*)
     int ri_consumer_eventfd(ri_consumer_t*)
     int ri_consumer_take_eventfd(ri_consumer_t*)
-    ri_info_t ri_consumer_info(ri_consumer_t*)
-    void ri_consumer_free_info(ri_consumer_t*)
     
     
     void ri_producer_release(ri_producer_t*)
@@ -83,8 +81,6 @@ cdef extern from "<rtipc/rtipc.h>":
     int ri_producer_take_eventfd(ri_producer_t*)
     int ri_producer_cache_enable(ri_producer_t*)
     void ri_producer_cache_disable(ri_producer_t*)
-    ri_info_t ri_producer_info(ri_producer_t*)
-    void ri_producer_free_info(ri_producer_t*)
   
     
 
