@@ -1,4 +1,5 @@
 import array
+import os
 from enum import IntEnum
 from pathlib import Path
 
@@ -337,8 +338,9 @@ class CServer:
         _c_server = cython.NULL
 
     def __init__(self, path: Path):
-        ptr: cython.p_char = path
-        self._c_server = rtipc.ri_server_new(ptr, 0)
+        path_bytes: bytes = os.fsencode(path)
+        path_str: cython.p_char = cython.cast(cython.p_char, path_bytes)
+        self._c_server = rtipc.ri_server_new(path_str, 0)
 
     def __dealloc__(self):
         if self._c_server is not cython.NULL:
@@ -353,3 +355,12 @@ class CServer:
 
 
 
+def client_connect(path: Path, attr: GroupAttr):
+    cattr = CGroupAttr(attr)
+    path_bytes: bytes = os.fsencode(path)
+    path_str: cython.p_char = cython.cast(cython.p_char, path_bytes)
+    grp = CChannelGroup()
+    grp._c_group = rtipc.ri_client_connect(path_str, cython.address(cattr.c_grp_attr))
+    if grp._c_group is cython.NULL:
+        raise RuntimeError()
+    return grp

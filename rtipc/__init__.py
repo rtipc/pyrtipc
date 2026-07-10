@@ -5,7 +5,7 @@ from pathlib import Path
 
 from .attr import ChannelAttr, GroupAttr
 
-from .rtipc_wrapper import CChannelGroup, CProducer, CConsumer, CServer, TryPushResult, ForcePushResult, PopResult 
+from .rtipc_wrapper import CChannelGroup, CProducer, CConsumer, CServer, TryPushResult, ForcePushResult, PopResult, client_connect as c_client_connect
 
 T = TypeVar("T", CStructure, CUnion)
 
@@ -81,3 +81,8 @@ class Server(object):
     def accept(self) -> ChannelGroup:
         c_grp = self.c_server.accept();
         return ChannelGroup(c_grp)
+
+def client_connect(path: Path, attr: GroupAttr) -> ChannelGroup:
+    c_grp = c_client_connect(path, attr);
+    return ChannelGroup(c_grp)
+    
