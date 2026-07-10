@@ -5,7 +5,7 @@ from pathlib import Path
 
 from .attr import ChannelAttr, GroupAttr
 
-from .rtipc_wrapper import CChannelGroup, CProducer, CConsumer, CServer
+from .rtipc_wrapper import CChannelGroup, CProducer, CConsumer, CServer, TryPushResult, ForcePushResult, PopResult 
 
 T = TypeVar("T", CStructure, CUnion)
 
@@ -21,10 +21,10 @@ class Producer(Generic[T]):
             return None
         return self.cls.from_buffer(msg)
         
-    def try_push(self):
+    def try_push(self) -> TryPushResult:
         return self.c_producer.try_push()
         
-    def force_push(self):
+    def force_push(self) -> FrocePushResult:
         return self.c_producer.force_push()
         
 class Consumer(Generic[T]):
@@ -38,11 +38,9 @@ class Consumer(Generic[T]):
             return None
         return self.cls.from_buffer(msg)
         
-    def pop(self):
+    def pop(self) -> PopResult:
         return self.c_consumer.pop()
-    
-    def flush(self):
-        return self.c_consumer.pop()
+
     
 class ChannelGroup(object):
     def __init__(self, c_grp: CChannelGroup):

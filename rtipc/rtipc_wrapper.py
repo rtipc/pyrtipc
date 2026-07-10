@@ -1,4 +1,5 @@
 import array
+from enum import IntEnum
 from pathlib import Path
 
 
@@ -12,6 +13,23 @@ from cython.cimports.cython.view import array as cvarray
 from cython.cimports import rtipc
 
 from .attr import ChannelAttr, GroupAttr
+
+class TryPushResult(IntEnum):
+    ERROR = rtipc.ri_try_push_result_t.RI_TRY_PUSH_RESULT_ERROR,
+    FAIL = rtipc.ri_try_push_result_t.RI_TRY_PUSH_RESULT_FAIL,
+    SUCCESS = rtipc.ri_try_push_result_t.RI_TRY_PUSH_RESULT_SUCCESS,
+    
+class ForcePushResult(IntEnum):
+    ERROR = rtipc.ri_force_push_result_t.RI_FORCE_PUSH_RESULT_ERROR,
+    SUCCESS = rtipc.ri_force_push_result_t.RI_FORCE_PUSH_RESULT_SUCCESS,
+    DICARDED = rtipc.ri_force_push_result_t.RI_FORCE_PUSH_RESULT_DISCARDED,
+    
+class PopResult(IntEnum):
+    ERROR = rtipc.ri_pop_result_t.RI_POP_RESULT_ERROR,
+    NO_MSG = rtipc.ri_pop_result_t.RI_POP_RESULT_NO_MSG,
+    NO_UPDATE = rtipc.ri_pop_result_t.RI_POP_RESULT_NO_UPDATE,
+    SUCCESS = rtipc.ri_pop_result_t.RI_POP_RESULT_SUCCESS,
+    DICARDED = rtipc.ri_pop_result_t.RI_POP_RESULT_DISCARDED,
 
 
 def get_memoryview(c_ptr: cython.pointer(cython.char), size: cython.int):
@@ -254,15 +272,19 @@ class CProducer:
         return get_memoryview(msg_char_ptr, msg_size)
     
         
-    def try_push(self) -> rtipc.ri_try_push_result_t:
+    def try_push(self) -> TryPushResult:
         if self._c_producer is cython.NULL:
             raise RuntimeError()
-        return rtipc.ri_producer_try_push(self._c_producer)
+        result = rtipc.ri_producer_try_push(self._c_producer)
+        return TryPushResult(result)
 
-    def force_push(self) -> rtipc.ri_try_push_result_t:
+    def force_push(self) -> ForcePushResult:
         if self._c_producer is cython.NULL:
             raise RuntimeError()
-        return rtipc.ri_producer_force_push(self._c_producer)
+            
+        result = rtipc.ri_producer_force_push(self._c_producer)
+        
+        return ForcePushResult(result)
 
 
 @cython.cclass
@@ -282,10 +304,13 @@ class CConsumer:
         return rtipc.ri_consumer_msg_size(self._c_consumer)
 
 
-    def pop(self) -> rtipc.ri_pop_result_t:
+    def pop(self) -> PopResult:
         if self._c_consumer is cython.NULL:
             raise RuntimeError()
-        return rtipc.ri_consumer_pop(self._c_consumer)
+            
+        result = rtipc.ri_consumer_pop(self._c_consumer)
+        
+        return PopResult(result)
     
     def current_msg(self):
         if self._c_consumer is cython.NULL:
