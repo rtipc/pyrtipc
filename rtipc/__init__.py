@@ -26,7 +26,10 @@ class Producer(Generic[T]):
         
     def force_push(self) -> FrocePushResult:
         return self.c_producer.force_push()
-        
+
+    def get_eventfd(self) -> int:
+        return self.c_producer.get_eventfd()
+
 class Consumer(Generic[T]):
     def __init__(self, c_consumer: CConsumer, cls: type[T]):
         self.c_consumer = c_consumer
@@ -40,6 +43,9 @@ class Consumer(Generic[T]):
         
     def pop(self) -> PopResult:
         return self.c_consumer.pop()
+
+    def get_eventfd(self) -> int:
+        return self.c_consumer.get_eventfd()
 
     
 class ChannelGroup(object):

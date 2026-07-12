@@ -287,6 +287,11 @@ class CProducer:
         
         return ForcePushResult(result)
 
+    def get_eventfd(self) -> int:
+        if self._c_producer is cython.NULL:
+            raise RuntimeError()
+
+        return rtipc.ri_producer_eventfd(self._c_producer)
 
 @cython.cclass
 class CConsumer:
@@ -329,6 +334,8 @@ class CConsumer:
     def get_eventfd(self) -> int:
         if self._c_consumer is cython.NULL:
             raise RuntimeError()
+
+        return rtipc.ri_consumer_eventfd(self._c_consumer)
             
 @cython.cclass
 class CServer:
