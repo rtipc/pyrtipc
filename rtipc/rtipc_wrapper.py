@@ -353,11 +353,21 @@ class CServer:
             rtipc.ri_server_delete(self._c_server)
 
     def accept(self) -> CChannelGroup:
+        if self._c_server is cython.NULL:
+            raise RuntimeError()
+
         grp = CChannelGroup()
         grp._c_group = rtipc.ri_server_accept(self._c_server, cython.NULL, cython.NULL)
         if grp._c_group is cython.NULL:
             raise RuntimeError()
+
         return grp
+
+    def get_socket(self) -> int:
+        if self._c_server is cython.NULL:
+            raise RuntimeError()
+
+        return rtipc.ri_server_socket(self._c_server)
 
 
 def client_connect(path: Path, attr: GroupAttr):

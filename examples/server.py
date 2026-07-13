@@ -21,21 +21,25 @@ class CmdServer(object):
     def __init__(self, socket, loop):
         self.loop = loop
         self.server = Server(socket)
-        
-    
-    def start(self) -> Future:
+        self.fut = self.loop.create_future()
+
+    def listen(self):
+        socket = self.server.get_socket()
+        self.loop.add_reader(socket, self.connection_handler)
+
+
+    async def await_stop(self):
+        await self.fut
+
+    def connection_handler(self):
         grp = self.server.accept()
-        
         self.chnl_cmd = grp.acquire_consumer(MsgCommand, 0)
         self.chnl_rsp = grp.acquire_producer(MsgResponse, 0)
         self.chnl_evt = grp.acquire_producer(MsgEvent, 1)
         
         event_cmd = self.chnl_cmd.get_eventfd()
         self.loop.add_reader(event_cmd, self.command_handler)
-        
-        self.fut = self.loop.create_future()
-        return self.fut
-    
+
     def command_handler(self):
         r = self.chnl_cmd.pop()
         
@@ -73,8 +77,8 @@ class CmdServer(object):
 async def main():
     loop = asyncio.get_event_loop()
     server = CmdServer("rtipc.sock", loop)
-    fut = server.start()
-    await fut
+    server.listen()
+    await server.await_stop()
 
     
 if __name__ == "__main__":

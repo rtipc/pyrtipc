@@ -88,6 +88,10 @@ class Server(object):
         c_grp = self.c_server.accept();
         return ChannelGroup(c_grp)
 
+    def get_socket(self) -> int:
+        return  self.c_server.get_socket();
+
+
 def client_connect(path: Path, attr: GroupAttr) -> ChannelGroup:
     c_grp = c_client_connect(path, attr);
     return ChannelGroup(c_grp)
