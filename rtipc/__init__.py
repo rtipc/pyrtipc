@@ -16,7 +16,7 @@ class Producer(Generic[T]):
         self.cls = cls
         
     def current_msg(self) -> T:
-        msg: bytearray = self.c_producer.current_msg()
+        msg = self.c_producer.current_msg()
         if msg is None:
             return None
         return self.cls.from_buffer(msg)
@@ -36,7 +36,7 @@ class Consumer(Generic[T]):
         self.cls = cls
         
     def current_msg(self) -> T:
-        msg: bytearray = self.c_consumer.current_msg()
+        msg = self.c_consumer.current_msg()
         if msg is None:
             return None
         return self.cls.from_buffer(msg)

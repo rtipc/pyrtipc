@@ -32,13 +32,13 @@ class PopResult(IntEnum):
     SUCCESS = rtipc.ri_pop_result_t.RI_POP_RESULT_SUCCESS,
     DICARDED = rtipc.ri_pop_result_t.RI_POP_RESULT_DISCARDED,
 
-
-def get_memoryview(c_ptr: cython.pointer(cython.char), size: cython.int) -> cython.char[:]:
+@cython.cfunc
+def get_memoryview(c_ptr: cython.p_char, size: cython.int) -> cython.char[:]:
     arr = cvarray(shape=(size,), itemsize=1, format="B", mode="c", allocate_buffer=False)
     arr.data = cython.cast(cython.pointer(cython.char), c_ptr)
-    
+
     arr_view = cython.declare(cython.char[:], arr)
-    
+
     return arr_view
 
 @cython.cclass
@@ -46,7 +46,7 @@ class CInfo:
     data: cython.p_void
     size: cython.size_t
 
-
+@cython.cfunc
 def info_to_bytes(info: CInfo) -> bytes:
     if info.size > 0:
         char_ptr = cython.cast(cython.p_char, info.data)
@@ -269,10 +269,9 @@ class CProducer:
             
         msg_size = rtipc.ri_producer_msg_size(self._c_producer)
         msg_char_ptr = cython.cast(cython.pointer(cython.char), msg_ptr)
-        
+
         return get_memoryview(msg_char_ptr, msg_size)
-    
-        
+
     def try_push(self) -> TryPushResult:
         if self._c_producer is cython.NULL:
             raise RuntimeError()
@@ -359,7 +358,6 @@ class CServer:
         if grp._c_group is cython.NULL:
             raise RuntimeError()
         return grp
-
 
 
 def client_connect(path: Path, attr: GroupAttr):
