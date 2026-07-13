@@ -8,7 +8,7 @@ from pyrtipc import ChannelAttr, GroupAttr, client_connect, TryPushResult, Force
 
 from ctypes import sizeof
 
-from messages import MsgCommand, MsgResponse, MsgEvent
+from messages import MsgCommand, MsgResponse, MsgEvent, CommandId
 
 
 producers = [ChannelAttr(0, sizeof(MsgCommand), True, b'rpc command')]
@@ -16,12 +16,6 @@ consumers = [ChannelAttr(0, sizeof(MsgResponse), True, b'rpc response'), Channel
     
 attr = GroupAttr(consumers, producers, b'rpc group')
 
-class CommandId(IntEnum):
-    CMDID_UNKNOWN = 0,
-    HELLO = 1,
-    STOP = 2,
-    SENDEVENT = 3,
-    DIV = 4,
      
     
 @dataclass
@@ -48,9 +42,9 @@ class Client(object):
         self.chnl_rsp = grp.acquire_consumer(MsgResponse, 0)
         self.chnl_evt = grp.acquire_consumer(MsgEvent, 1)
         
-        event_cmd = self.chnl_rsp.get_eventfd()
+        event_rsp = self.chnl_rsp.get_eventfd()
         event_evt = self.chnl_evt.get_eventfd()
-        self.loop.add_reader(event_cmd, self.response_handler)
+        self.loop.add_reader(event_rsp, self.response_handler)
         self.loop.add_reader(event_evt, self.event_handler)
         
     def send_command(self, cmd: Command):

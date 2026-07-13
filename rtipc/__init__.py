@@ -82,7 +82,7 @@ class ChannelGroup(object):
 
 class Server(object):
     def __init__(self, path: Path):
-        self.c_server = CChannelVector(path)
+        self.c_server = CServer(path)
         
     def accept(self) -> ChannelGroup:
         c_grp = self.c_server.accept();
