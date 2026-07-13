@@ -33,7 +33,7 @@ class PopResult(IntEnum):
     DICARDED = rtipc.ri_pop_result_t.RI_POP_RESULT_DISCARDED,
 
 
-def get_memoryview(c_ptr: cython.pointer(cython.char), size: cython.int):
+def get_memoryview(c_ptr: cython.pointer(cython.char), size: cython.int) -> cython.char[:]:
     arr = cvarray(shape=(size,), itemsize=1, format="B", mode="c", allocate_buffer=False)
     arr.data = cython.cast(cython.pointer(cython.char), c_ptr)
     
@@ -259,7 +259,7 @@ class CProducer:
             raise RuntimeError()
         return rtipc.ri_producer_msg_size(self._c_producer)
     
-    def current_msg(self):
+    def current_msg(self) -> cython.char[:]:
         if self._c_producer is cython.NULL:
             raise RuntimeError()
             
@@ -318,7 +318,7 @@ class CConsumer:
         
         return PopResult(result)
     
-    def current_msg(self):
+    def current_msg(self) -> cython.char[:]:
         if self._c_consumer is cython.NULL:
             raise RuntimeError()
             
