@@ -9,7 +9,7 @@ include(UseCython)
 
 set(RTIPC_INSTALL_DIR ${CMAKE_CURRENT_BINARY_DIR}/rtipc-install)
 set(SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/pyrtipc)
-set(RTIC_INCLUDE_DIR ${RTIPC_INSTALL_DIR}/include)
+set(RTIPC_INCLUDE_DIR ${RTIPC_INSTALL_DIR}/include)
 set(RTIPC_LIBRARY ${RTIPC_INSTALL_DIR}/lib/librtipc.a)
 
 
