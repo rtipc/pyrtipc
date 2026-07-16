@@ -13,6 +13,8 @@ target_include_directories(rtipc_wrapper PRIVATE ${RTIPC_INCLUDE_DIR})
 
 target_link_libraries(rtipc_wrapper PRIVATE ${RTIPC_LIBRARY})
 
+add_dependencies(rtipc_wrapper rtipc_project)
+
 
 install(
   TARGETS rtipc_wrapper
