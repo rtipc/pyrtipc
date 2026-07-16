@@ -9,7 +9,7 @@ cython_transpile(${CMAKE_CURRENT_SOURCE_DIR}/rtipc_wrapper.py LANGUAGE C CYTHON_
 python_add_library(rtipc_wrapper  ${RTIPC_WRAPPER_SRC})
 #python_add_library(pyrtipc2 MODULE WITH_SOABI   ${RTIPC_WRAPPER_SRC})
 
-target_include_directories(rtipc_wrapper PRIVATE ${RTIC_INCLUDE_DIR})
+target_include_directories(rtipc_wrapper PRIVATE ${RTIPC_INCLUDE_DIR})
 
 target_link_libraries(rtipc_wrapper PRIVATE ${RTIPC_LIBRARY})
 
