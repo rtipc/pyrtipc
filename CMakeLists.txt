@@ -8,16 +8,14 @@ find_package(Cython REQUIRED)
 include(UseCython)
 
 set(RTIPC_INSTALL_DIR ${CMAKE_CURRENT_BINARY_DIR}/rtipc-install)
-set(SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/pyrtipc)
 set(RTIPC_INCLUDE_DIR ${RTIPC_INSTALL_DIR}/include)
 set(RTIPC_LIBRARY ${RTIPC_INSTALL_DIR}/lib/librtipc.a)
 
 
 ExternalProject_Add(
   rtipc_project
-  BUILD_BYPRODUCTS ${RTIPC_LIBRARY} 
-  GIT_REPOSITORY    https://github.com/mausys/rtipc.git
-  GIT_TAG           main
+  SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/rtipc
+  BUILD_BYPRODUCTS ${RTIPC_LIBRARY}
   INSTALL_DIR ${RTIPC_INSTALL_DIR}
   CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR> -DCMAKE_INSTALL_LIBDIR=lib
 )
@@ -28,9 +26,6 @@ set_property(TARGET rtipc_library PROPERTY IMPORTED_LOCATION ${RTIPC_LIBRARY})
 add_dependencies(rtipc_library rtipc_project)
 
 
-#find_library (LIBRTIPC NAMES rtipc PATHS "${RTIPC_INSTALL_DIR}/lib" REQUIRED NO_DEFAULT_PATH)
-#add_dependencies("${LIBRTIPC}" rtipc)
-#message("LIBRTIPC=${LIBRTIPC}")
 project(pyrtipc LANGUAGES C)
 
 set(CMAKE_C_STANDARD 11)
@@ -38,6 +33,6 @@ set(CMAKE_C_STANDARD 11)
 option(RTIPC_BUILD_EXAMPLES "Build examples" OFF)
 
 
-add_subdirectory(rtipc)
+add_subdirectory(wrapper)
 
 

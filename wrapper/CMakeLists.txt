@@ -7,7 +7,6 @@ endif()
 cython_transpile(${CMAKE_CURRENT_SOURCE_DIR}/rtipc_wrapper.py LANGUAGE C CYTHON_ARGS  -I ${CMAKE_CURRENT_SOURCE_DIR} OUTPUT_VARIABLE RTIPC_WRAPPER_SRC)
 
 python_add_library(rtipc_wrapper  ${RTIPC_WRAPPER_SRC})
-#python_add_library(pyrtipc2 MODULE WITH_SOABI   ${RTIPC_WRAPPER_SRC})
 
 target_include_directories(rtipc_wrapper PRIVATE ${RTIPC_INCLUDE_DIR})
 
@@ -25,11 +24,3 @@ install(
 
 
 
-install(
-  FILES
-    __init__.py
-    attr.py
-    rtipc.pxd
-  DESTINATION
-    pyrtipc
-)
