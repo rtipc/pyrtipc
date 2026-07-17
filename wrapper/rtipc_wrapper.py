@@ -43,7 +43,7 @@ def get_memoryview(c_ptr: cython.p_char, size: cython.int) -> cython.char[:]:
 
 @cython.cclass
 class CInfo:
-    data: cython.p_void
+    data: cython.p_const_void
     size: cython.size_t
 
 @cython.cfunc
