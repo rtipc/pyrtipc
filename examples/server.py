@@ -1,5 +1,5 @@
-import asyncio 
-from asyncio import Future 
+import asyncio
+from asyncio import Future
 from dataclasses import dataclass
 from enum import IntEnum
 from ctypes import sizeof
@@ -11,7 +11,7 @@ from messages import MsgCommand, MsgResponse, MsgEvent, CommandId
 
 producers = [ChannelAttr(0, sizeof(MsgCommand), True, b'rpc command')]
 consumers = [ChannelAttr(0, sizeof(MsgResponse), True, b'rpc response'), ChannelAttr(10, sizeof(MsgEvent), True, b'rpc event')]
-    
+
 attr = GroupAttr(consumers, producers, b'rpc group')
 
 
@@ -22,7 +22,7 @@ class Rpc(object):
         self.chnl_cmd = grp.acquire_consumer(MsgCommand, 0)
         self.chnl_rsp = grp.acquire_producer(MsgResponse, 0)
         self.chnl_evt = grp.acquire_producer(MsgEvent, 1)
-        
+
         event_cmd = self.chnl_cmd.get_eventfd()
         self.loop.add_reader(event_cmd, self.command_handler)
         self.future = self.loop.create_future()
@@ -59,7 +59,7 @@ class Rpc(object):
                     rsp.data = Rpc.divide(cmd.args[0], cmd.args[1])
                 except ZeroDivisionError:
                     rsp.result = -1
-                
+
         self.chnl_rsp.force_push()
 
         if stop:
