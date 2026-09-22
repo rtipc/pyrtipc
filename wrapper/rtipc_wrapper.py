@@ -4,16 +4,11 @@ from collections.abc import Callable
 from enum import IntEnum
 from pathlib import Path
 
-
 import cython
-
-from cython.cimports.cpython.mem import PyMem_Malloc, PyMem_Calloc, PyMem_Free
-from cython.cimports.cpython import array as carray
-from cython.cimports.libc.string import memcpy
-from cython.cimports.cython.view import array as cvarray
-from cython.cimports.cpython import bool as cbool
-
 from cython.cimports import rtipc
+from cython.cimports.cpython import array as carray
+from cython.cimports.cpython.mem import PyMem_Calloc, PyMem_Free
+from cython.cimports.cython.view import array as cvarray
 
 from .attr import ChannelAttr, GroupAttr
 
@@ -62,7 +57,7 @@ def info_to_bytes(info: CInfo) -> bytes:
         char_ptr = cython.cast(cython.p_char, info.data)
         return char_ptr[: info.size]
     else:
-        return bytes()
+        return b""
 
 
 @cython.cclass
@@ -148,12 +143,12 @@ def from_c_group_attr(
     n_producers: int,
 ) -> GroupAttr:
     consumers = []
-    for i in range(0, n_consumers):
+    for i in range(n_consumers):
         chn_attr = from_c_channel_attr(c_attr.consumers[i])
         consumers.append(chn_attr)
 
     producers = []
-    for i in range(0, n_producers):
+    for i in range(n_producers):
         chn_attr = from_c_channel_attr(c_attr.producers[i])
         producers.append(chn_attr)
 
@@ -222,42 +217,14 @@ class CChannelGroup:
     def get_attr(self) -> GroupAttr:
         if self._c_group is cython.NULL:
             raise RuntimeError()
+            
         c_attr = rtipc.ri_group_get_attr(self._c_group)
 
-        consumers = []
-        for i in range(0, rtipc.ri_group_num_consumers(self._c_group)):
-            c_chn_attr = c_attr.consumers[i]
-            c_info = CInfo()
-            c_info.size = c_chn_attr.info.size
-            c_info.data = c_chn_attr.info.data
-            chn_attr = ChannelAttr(
-                c_chn_attr.add_msgs,
-                c_chn_attr.msg_size,
-                c_chn_attr.eventfd,
-                info_to_bytes(c_info),
-            )
-            consumers.append(chn_attr)
+        n_consumers = rtipc.ri_group_num_consumers(self._c_group)
 
-        producers = []
-        for i in range(0, rtipc.ri_group_num_producers(self._c_group)):
-            c_chn_attr = c_attr.producers[i]
-            c_info = CInfo()
-            c_info.size = c_chn_attr.info.size
-            c_info.data = c_chn_attr.info.data
-            chn_attr = ChannelAttr(
-                c_chn_attr.add_msgs,
-                c_chn_attr.msg_size,
-                c_chn_attr.eventfd,
-                info_to_bytes(c_info),
-            )
-            producers.append(chn_attr)
+        n_producers = rtipc.ri_group_num_consumers(self._c_group)
 
-        c_info = CInfo()
-        c_info.size = c_attr.info.size
-        c_info.data = c_attr.info.data
-        grp_info = info_to_bytes(c_info)
-
-        return GroupAttr(consumers, producers, grp_info)
+        return from_c_group_attr(cython.address(c_attr), n_consumers, n_producers)
 
     def num_consumers(self) -> int:
         if self._c_group is cython.NULL:
@@ -388,7 +355,6 @@ class _FilterContext:
 
 
 @cython.cfunc
-@cython.exceptval(check=False)
 def _filter_callback(
     c_group_attr: cython.pointer(cython.const[rtipc.ri_group_attr_t]),
     n_consumers: cython.uint,

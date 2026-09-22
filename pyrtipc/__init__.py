@@ -1,21 +1,21 @@
-from typing import TypeVar, Generic
 from collections.abc import Callable
-from ctypes import Structure as CStructure, Union as CUnion, sizeof as csizeof
-
+from ctypes import Structure as CStructure
+from ctypes import Union as CUnion
+from ctypes import sizeof as csizeof
 from pathlib import Path
+from typing import Generic, TypeVar
 
-from .attr import ChannelAttr, GroupAttr
-
+from .attr import GroupAttr
 from .rtipc_wrapper import (
     CChannelGroup,
-    CProducer,
     CConsumer,
+    CProducer,
     CServer,
-    TryPushResult,
     ForcePushResult,
     PopResult,
-    client_connect as c_client_connect,
+    TryPushResult,
 )
+from .rtipc_wrapper import client_connect as c_client_connect
 
 T = TypeVar("T", CStructure, CUnion)
 
@@ -34,7 +34,7 @@ class Producer(Generic[T]):
     def try_push(self) -> TryPushResult:
         return self.c_producer.try_push()
 
-    def force_push(self) -> FrocePushResult:
+    def force_push(self) -> ForcePushResult:
         return self.c_producer.force_push()
 
     def get_eventfd(self) -> int:
@@ -59,17 +59,17 @@ class Consumer(Generic[T]):
         return self.c_consumer.get_eventfd()
 
 
-class ChannelGroup(object):
+class ChannelGroup:
     def __init__(self, c_grp: CChannelGroup):
         self.c_grp = c_grp
 
     @classmethod
-    def from_attr(cls, attr: GroupAttr) -> ChannelGroup:
+    def from_attr(cls, attr: GroupAttr) -> T:
         c_grp = CChannelGroup.from_attr(attr)
         return cls(c_grp)
 
     @classmethod
-    def deserialize(cls, req: bytes, fds: int[:]) -> ChannelGroup:
+    def deserialize(cls, req: bytes, fds: int[:]) -> T:
         c_grp = CChannelGroup.deserialize(req, fds)
         return cls(c_grp)
 
@@ -92,7 +92,7 @@ class ChannelGroup(object):
         return Consumer(c_consumer, cls)
 
 
-class Server(object):
+class Server:
     def __init__(self, path: Path):
         self.c_server = CServer(path)
 
