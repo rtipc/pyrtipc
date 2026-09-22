@@ -355,6 +355,7 @@ class _FilterContext:
 
 
 @cython.cfunc
+@cython.exceptval(check=False)
 def _filter_callback(
     c_group_attr: cython.pointer(cython.const[rtipc.ri_group_attr_t]),
     n_consumers: cython.uint,
@@ -364,9 +365,10 @@ def _filter_callback(
     try:
         group_attr = from_c_group_attr(c_group_attr, n_consumers, n_producers)
         context = cython.cast(_FilterContext, user_data)
-        return context.filter(group_attr)
+        result = context.filter(group_attr)
+        return rtipc.RI_BOOL_TRUE if result else rtipc.RI_BOOL_FALSE
     except:
-        return False
+        return rtipc.RI_BOOL_FALSE
 
 
 @cython.cclass
