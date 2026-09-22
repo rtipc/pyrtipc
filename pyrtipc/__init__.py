@@ -5,7 +5,7 @@ from ctypes import sizeof as csizeof
 from pathlib import Path
 from typing import Generic, TypeVar
 
-from .attr import GroupAttr
+from .attr import ChannelAttr, GroupAttr
 from .rtipc_wrapper import (
     CChannelGroup,
     CConsumer,

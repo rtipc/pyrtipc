@@ -1,21 +1,15 @@
 import asyncio
-from asyncio import Future
-from dataclasses import dataclass
-from enum import IntEnum
 from ctypes import sizeof
+
+from messages import CommandId, MsgCommand, MsgEvent, MsgResponse
 
 from pyrtipc import (
     ChannelAttr,
-    GroupAttr,
     ChannelGroup,
-    Server,
-    TryPushResult,
-    ForcePushResult,
+    GroupAttr,
     PopResult,
+    Server,
 )
-
-from messages import MsgCommand, MsgResponse, MsgEvent, CommandId
-
 
 producers = [ChannelAttr(0, sizeof(MsgCommand), True, b"rpc command")]
 consumers = [
@@ -26,7 +20,7 @@ consumers = [
 attr = GroupAttr(consumers, producers, b"rpc group")
 
 
-class Rpc(object):
+class Rpc:
     def __init__(self, grp: ChannelGroup, loop):
         self.loop = loop
         self.grp = grp
@@ -85,7 +79,7 @@ class Rpc(object):
         return int(float(a) / float(b))
 
     def send_events(self, id: int, num: int, force: bool) -> int:
-        for i in range(0, num):
+        for i in range(num):
             msg = self.chnl_evt.current_msg()
             msg.id = id
             msg.nr = i
@@ -98,7 +92,7 @@ class Rpc(object):
         return 0, num
 
 
-class CmdServer(object):
+class CmdServer:
     def __init__(self, socket, loop):
         self.loop = loop
         self.server = Server(socket)
@@ -111,7 +105,7 @@ class CmdServer(object):
         await self.listen_future
 
     def connection_handler(self):
-        grp = self.server.accept()
+        grp = self.server.accept(None)
         rpc = Rpc(grp, self.loop)
         self.rpc_futures.append(rpc.get_future())
         self.listen_future.set_result(1)
