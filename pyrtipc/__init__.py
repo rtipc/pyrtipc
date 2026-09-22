@@ -1,11 +1,21 @@
 from typing import TypeVar, Generic
+from collections.abc import Callable
 from ctypes import Structure as CStructure, Union as CUnion, sizeof as csizeof
 
 from pathlib import Path
 
 from .attr import ChannelAttr, GroupAttr
 
-from .rtipc_wrapper import CChannelGroup, CProducer, CConsumer, CServer, TryPushResult, ForcePushResult, PopResult, client_connect as c_client_connect
+from .rtipc_wrapper import (
+    CChannelGroup,
+    CProducer,
+    CConsumer,
+    CServer,
+    TryPushResult,
+    ForcePushResult,
+    PopResult,
+    client_connect as c_client_connect,
+)
 
 T = TypeVar("T", CStructure, CUnion)
 
@@ -29,6 +39,7 @@ class Producer(Generic[T]):
 
     def get_eventfd(self) -> int:
         return self.c_producer.get_eventfd()
+
 
 class Consumer(Generic[T]):
     def __init__(self, c_consumer: CConsumer, cls: type[T]):
@@ -54,16 +65,16 @@ class ChannelGroup(object):
 
     @classmethod
     def from_attr(cls, attr: GroupAttr) -> ChannelGroup:
-        c_grp = CChannelGroup.from_attr(attr);
+        c_grp = CChannelGroup.from_attr(attr)
         return cls(c_grp)
 
     @classmethod
     def deserialize(cls, req: bytes, fds: int[:]) -> ChannelGroup:
-        c_grp = CChannelGroup.deserialize(req, fds);
+        c_grp = CChannelGroup.deserialize(req, fds)
         return cls(c_grp)
 
     def get_attr(self) -> GroupAttr:
-        return self.c_grp.get_attr();
+        return self.c_grp.get_attr()
 
     def serialize(self):
         return self.c_grp.serialize()
@@ -80,21 +91,19 @@ class ChannelGroup(object):
             raise RuntimeError()
         return Consumer(c_consumer, cls)
 
+
 class Server(object):
     def __init__(self, path: Path):
         self.c_server = CServer(path)
 
-    def accept(self) -> ChannelGroup:
-        c_grp = self.c_server.accept();
+    def accept(self, filter: Callable[[GroupAttr], bool]) -> ChannelGroup:
+        c_grp = self.c_server.accept(filter)
         return ChannelGroup(c_grp)
 
     def get_socket(self) -> int:
-        return  self.c_server.get_socket();
+        return self.c_server.get_socket()
 
 
 def client_connect(path: Path, attr: GroupAttr) -> ChannelGroup:
-    c_grp = c_client_connect(path, attr);
+    c_grp = c_client_connect(path, attr)
     return ChannelGroup(c_grp)
-
-
-

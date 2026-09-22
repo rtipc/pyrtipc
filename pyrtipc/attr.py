@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 
+
 @dataclass
 class ChannelAttr:
     add_msgs: int

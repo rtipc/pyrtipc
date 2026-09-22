@@ -82,18 +82,24 @@ cdef extern from "<rtipc/rtipc.h>":
     int ri_producer_cache_enable(ri_producer_t*)
     void ri_producer_cache_disable(ri_producer_t*)
   
-    
 
 
 cdef extern from "<rtipc/connect.h>":
+    """
+    #include <stdbool.h>
+    typedef bool ri_bool_t;
+    """
+    
     cdef struct ri_server:
         pass
     ctypedef ri_server ri_server_t
-    
+
+    ctypedef bool ri_bool_t;
+
     ri_server_t* ri_server_new(const char*, int)
     void ri_server_delete(ri_server_t*)
     int ri_server_socket(ri_server_t*)
-    ctypedef bint (*ri_filter_fn)(ri_group_attr_t*, unsigned int, unsigned int, void*)
+    ctypedef bool (*ri_filter_fn)(const ri_group_attr_t*, unsigned int, unsigned int, void*)
     ri_group_t* ri_server_socket_accept(int, ri_filter_fn, void*)
     ri_group_t* ri_server_accept(ri_server_t*, ri_filter_fn, void*)
     ri_group_t* ri_client_socket_connect(int, ri_group_attr_t*)

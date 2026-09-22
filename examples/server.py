@@ -4,15 +4,26 @@ from dataclasses import dataclass
 from enum import IntEnum
 from ctypes import sizeof
 
-from pyrtipc import ChannelAttr, GroupAttr, ChannelGroup, Server, TryPushResult, ForcePushResult, PopResult
+from pyrtipc import (
+    ChannelAttr,
+    GroupAttr,
+    ChannelGroup,
+    Server,
+    TryPushResult,
+    ForcePushResult,
+    PopResult,
+)
 
 from messages import MsgCommand, MsgResponse, MsgEvent, CommandId
 
 
-producers = [ChannelAttr(0, sizeof(MsgCommand), True, b'rpc command')]
-consumers = [ChannelAttr(0, sizeof(MsgResponse), True, b'rpc response'), ChannelAttr(10, sizeof(MsgEvent), True, b'rpc event')]
+producers = [ChannelAttr(0, sizeof(MsgCommand), True, b"rpc command")]
+consumers = [
+    ChannelAttr(0, sizeof(MsgResponse), True, b"rpc response"),
+    ChannelAttr(10, sizeof(MsgEvent), True, b"rpc event"),
+]
 
-attr = GroupAttr(consumers, producers, b'rpc group')
+attr = GroupAttr(consumers, producers, b"rpc group")
 
 
 class Rpc(object):
@@ -34,7 +45,7 @@ class Rpc(object):
         r = self.chnl_cmd.pop()
 
         if r != PopResult.SUCCESS and r != PopResult.DICARDED:
-            print("command pop failed=" +str(r))
+            print("command pop failed=" + str(r))
             return
 
         cmd = self.chnl_cmd.current_msg()
@@ -53,7 +64,9 @@ class Rpc(object):
             case CommandId.STOP:
                 stop = True
             case CommandId.SENDEVENT:
-                rsp.result, rsp.data = self.send_events(cmd.args[0], cmd.args[1], cmd.args[2] != 0)
+                rsp.result, rsp.data = self.send_events(
+                    cmd.args[0], cmd.args[1], cmd.args[2] != 0
+                )
             case CommandId.DIV:
                 try:
                     rsp.data = Rpc.divide(cmd.args[0], cmd.args[1])
@@ -81,7 +94,7 @@ class Rpc(object):
             else:
                 r = self.chnl_evt.try_push()
                 if r < 0:
-                    return r, i;
+                    return r, i
         return 0, num
 
 
