@@ -103,9 +103,12 @@ class CmdServer:
         socket = self.server.get_socket()
         self.loop.add_reader(socket, self.connection_handler)
         await self.listen_future
-
+    
+    def filter(self, attr: GroupAttr) -> bool:
+        return True
+    
     def connection_handler(self):
-        grp = self.server.accept(None)
+        grp = self.server.accept(self.filter)
         rpc = Rpc(grp, self.loop)
         self.rpc_futures.append(rpc.get_future())
         self.listen_future.set_result(1)
