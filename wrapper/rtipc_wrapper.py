@@ -376,17 +376,15 @@ class CServer:
         n_consumers: cython.uint,
         n_producers: cython.uint,
         user_data: cython.p_void,
-    ) -> rtipc.ri_bool_t:
+    ) -> rtipc.bool:
         try:
             group_attr = from_c_group_attr(c_group_attr, n_consumers, n_producers)
             server = cython.cast(CServer, user_data)
             
-            result = server._filter(group_attr)
-            
-            return rtipc.RI_BOOL_TRUE if result else rtipc.RI_BOOL_FALSE
+            return server._filter(group_attr)
         except Exception as e:
             print("_filter_callback Exception:", repr(e))
-            return rtipc.RI_BOOL_FALSE
+            return False
 
     def accept(self, filter: Callable[[GroupAttr], bool]) -> CChannelGroup:
         if self._c_server is cython.NULL:
