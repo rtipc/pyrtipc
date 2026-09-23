@@ -349,34 +349,15 @@ class CConsumer:
         return rtipc.ri_consumer_eventfd(self._c_consumer)
 
 
-@cython.cclass
-class _FilterContext:
-    filter: Callable[[GroupAttr], bool]
-
-
-@cython.cfunc
-@cython.exceptval(check=False)
-def _filter_callback(
-    c_group_attr: cython.pointer(cython.const[rtipc.ri_group_attr_t]),
-    n_consumers: cython.uint,
-    n_producers: cython.uint,
-    user_data: cython.p_void,
-) -> rtipc.ri_bool_t:
-    try:
-        group_attr = from_c_group_attr(c_group_attr, n_consumers, n_producers)
-        context = cython.cast(_FilterContext, user_data)
-        result = context.filter(group_attr)
-        return rtipc.RI_BOOL_TRUE if result else rtipc.RI_BOOL_FALSE
-    except:
-        return rtipc.RI_BOOL_FALSE
 
 
 @cython.cclass
 class CServer:
     _c_server: cython.pointer[rtipc.ri_server_t]
-
+    _filter: Callable[[GroupAttr], bool]
+    
     def __cinit__(self):
-        _c_server = cython.NULL
+        self._c_server = cython.NULL
 
     def __init__(self, path: Path):
         path_bytes: bytes = os.fsencode(path)
@@ -386,17 +367,37 @@ class CServer:
     def __dealloc__(self):
         if self._c_server is not cython.NULL:
             rtipc.ri_server_delete(self._c_server)
+            
+    @staticmethod        
+    @cython.cfunc
+    @cython.exceptval(check=False)
+    def _filter_callback(
+        c_group_attr: cython.pointer(cython.const[rtipc.ri_group_attr_t]),
+        n_consumers: cython.uint,
+        n_producers: cython.uint,
+        user_data: cython.p_void,
+    ) -> rtipc.ri_bool_t:
+        try:
+            group_attr = from_c_group_attr(c_group_attr, n_consumers, n_producers)
+            server = cython.cast(CServer, user_data)
+            
+            result = server._filter(group_attr)
+            
+            return rtipc.RI_BOOL_TRUE if result else rtipc.RI_BOOL_FALSE
+        except Exception as e:
+            print("_filter_callback Exception:", repr(e))
+            return rtipc.RI_BOOL_FALSE
 
     def accept(self, filter: Callable[[GroupAttr], bool]) -> CChannelGroup:
         if self._c_server is cython.NULL:
             raise RuntimeError()
 
         grp = CChannelGroup()
-        context = _FilterContext()
-        context.filter = filter
+
+        self._filter = filter
 
         grp._c_group = rtipc.ri_server_accept(
-            self._c_server, _filter_callback, cython.cast(cython.p_void, context)
+            self._c_server, self._filter_callback, cython.cast(cython.p_void, self)
         )
         if grp._c_group is cython.NULL:
             raise RuntimeError()
