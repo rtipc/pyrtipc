@@ -10,7 +10,7 @@ from cython.cimports.cpython import array as carray
 from cython.cimports.cpython.mem import PyMem_Calloc, PyMem_Free
 from cython.cimports.cython.view import array as cvarray
 
-from .attr import ChannelAttr, GroupAttr
+from .attr import ChannelAttributes, GroupAttributes
 
 
 class TryPushResult(IntEnum):
@@ -68,7 +68,7 @@ class CGroupAttr:
     def __cinit__(self):
         self._c_chnl_attrs = cython.NULL
 
-    def __init__(self, grp_attr: GroupAttr):
+    def __init__(self, grp_attr: GroupAttributes):
         n_consumers = len(grp_attr.consumers)
         n_producers = len(grp_attr.producers)
 
@@ -112,7 +112,7 @@ class CGroupAttr:
     @staticmethod
     @cython.cfunc
     def _init_c_channel(
-        c_attr: cython.pointer[rtipc.ri_channel_attr_t], attr: ChannelAttr
+        c_attr: cython.pointer[rtipc.ri_channel_attr_t], attr: ChannelAttributes
     ):
         info_ptr: cython.p_char = attr.info
         c_attr.add_msgs = attr.add_msgs
@@ -127,11 +127,11 @@ class CGroupAttr:
 
 
 @cython.cfunc
-def from_c_channel_attr(c_attr: rtipc.ri_channel_attr_t) -> ChannelAttr:
+def from_c_channel_attr(c_attr: rtipc.ri_channel_attr_t) -> ChannelAttributes:
     c_info = CInfo()
     c_info.size = c_attr.info.size
     c_info.data = c_attr.info.data
-    return ChannelAttr(
+    return ChannelAttributes(
         c_attr.add_msgs, c_attr.msg_size, c_attr.eventfd, info_to_bytes(c_info)
     )
 
@@ -141,7 +141,7 @@ def from_c_group_attr(
     c_attr: cython.pointer(cython.const[rtipc.ri_group_attr_t]),
     n_consumers: int,
     n_producers: int,
-) -> GroupAttr:
+) -> GroupAttributes:
     consumers = []
     for i in range(n_consumers):
         chn_attr = from_c_channel_attr(c_attr.consumers[i])
@@ -157,7 +157,7 @@ def from_c_group_attr(
     c_info.data = c_attr.info.data
     grp_info = info_to_bytes(c_info)
 
-    return GroupAttr(consumers, producers, grp_info)
+    return GroupAttributes(consumers, producers, grp_info)
 
 
 @cython.cclass
@@ -172,7 +172,7 @@ class CChannelGroup:
             rtipc.ri_group_delete(self._c_group)
 
     @staticmethod
-    def from_attr(attr: GroupAttr) -> CChannelGroup:
+    def from_attr(attr: GroupAttributes) -> CChannelGroup:
         cattr = CGroupAttr(attr)
         grp = CChannelGroup()
         grp._c_group = rtipc.ri_group_from_attr(cython.address(cattr.c_grp_attr))
@@ -214,10 +214,10 @@ class CChannelGroup:
 
         return (req, fds[0:n_fds])
 
-    def get_attr(self) -> GroupAttr:
+    def get_attr(self) -> GroupAttributes:
         if self._c_group is cython.NULL:
             raise RuntimeError()
-            
+
         c_attr = rtipc.ri_group_get_attr(self._c_group)
 
         n_consumers = rtipc.ri_group_num_consumers(self._c_group)
@@ -349,13 +349,11 @@ class CConsumer:
         return rtipc.ri_consumer_eventfd(self._c_consumer)
 
 
-
-
 @cython.cclass
 class CServer:
     _c_server: cython.pointer[rtipc.ri_server_t]
-    _filter: Callable[[GroupAttr], bool]
-    
+    _filter: Callable[[GroupAttributes], bool]
+
     def __cinit__(self):
         self._c_server = cython.NULL
 
@@ -367,8 +365,8 @@ class CServer:
     def __dealloc__(self):
         if self._c_server is not cython.NULL:
             rtipc.ri_server_delete(self._c_server)
-            
-    @staticmethod        
+
+    @staticmethod
     @cython.cfunc
     @cython.exceptval(check=False)
     def _filter_callback(
@@ -380,13 +378,13 @@ class CServer:
         try:
             group_attr = from_c_group_attr(c_group_attr, n_consumers, n_producers)
             server = cython.cast(CServer, user_data)
-            
+
             return server._filter(group_attr)
         except Exception as e:
             print("_filter_callback Exception:", repr(e))
             return False
 
-    def accept(self, filter: Callable[[GroupAttr], bool]) -> CChannelGroup:
+    def accept(self, filter: Callable[[GroupAttributes], bool]) -> CChannelGroup:
         if self._c_server is cython.NULL:
             raise RuntimeError()
 
@@ -409,7 +407,7 @@ class CServer:
         return rtipc.ri_server_socket(self._c_server)
 
 
-def client_connect(path: Path, attr: GroupAttr):
+def client_connect(path: Path, attr: GroupAttributes):
     cattr = CGroupAttr(attr)
     path_bytes: bytes = os.fsencode(path)
     path_str: cython.p_char = cython.cast(cython.p_char, path_bytes)

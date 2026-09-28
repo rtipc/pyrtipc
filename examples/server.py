@@ -4,20 +4,20 @@ from ctypes import sizeof
 from messages import CommandId, MsgCommand, MsgEvent, MsgResponse
 
 from pyrtipc import (
-    ChannelAttr,
+    ChannelAttributes,
     ChannelGroup,
-    GroupAttr,
+    GroupAttributes,
     PopResult,
     Server,
 )
 
-producers = [ChannelAttr(0, sizeof(MsgCommand), True, b"rpc command")]
+producers = [ChannelAttributes(0, sizeof(MsgCommand), True, b"rpc command")]
 consumers = [
-    ChannelAttr(0, sizeof(MsgResponse), True, b"rpc response"),
-    ChannelAttr(10, sizeof(MsgEvent), True, b"rpc event"),
+    ChannelAttributes(0, sizeof(MsgResponse), True, b"rpc response"),
+    ChannelAttributes(10, sizeof(MsgEvent), True, b"rpc event"),
 ]
 
-attr = GroupAttr(consumers, producers, b"rpc group")
+attr = GroupAttributes(consumers, producers, b"rpc group")
 
 
 class Rpc:
@@ -103,10 +103,10 @@ class CmdServer:
         socket = self.server.get_socket()
         self.loop.add_reader(socket, self.connection_handler)
         await self.listen_future
-    
-    def filter(self, attr: GroupAttr) -> bool:
+
+    def filter(self, attr: GroupAttributes) -> bool:
         return True
-    
+
     def connection_handler(self):
         grp = self.server.accept(self.filter)
         rpc = Rpc(grp, self.loop)

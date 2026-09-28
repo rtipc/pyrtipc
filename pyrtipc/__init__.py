@@ -5,7 +5,7 @@ from ctypes import sizeof as csizeof
 from pathlib import Path
 from typing import Generic, TypeVar
 
-from .attr import ChannelAttr, GroupAttr
+from .attr import ChannelAttributes, GroupAttributes
 from .rtipc_wrapper import (
     CChannelGroup,
     CConsumer,
@@ -64,7 +64,7 @@ class ChannelGroup:
         self.c_grp = c_grp
 
     @classmethod
-    def from_attr(cls, attr: GroupAttr) -> T:
+    def from_attr(cls, attr: GroupAttributes) -> T:
         c_grp = CChannelGroup.from_attr(attr)
         return cls(c_grp)
 
@@ -73,7 +73,7 @@ class ChannelGroup:
         c_grp = CChannelGroup.deserialize(req, fds)
         return cls(c_grp)
 
-    def get_attr(self) -> GroupAttr:
+    def get_attr(self) -> GroupAttributes:
         return self.c_grp.get_attr()
 
     def serialize(self):
@@ -96,7 +96,7 @@ class Server:
     def __init__(self, path: Path):
         self.c_server = CServer(path)
 
-    def accept(self, filter: Callable[[GroupAttr], bool]) -> ChannelGroup:
+    def accept(self, filter: Callable[[GroupAttributes], bool]) -> ChannelGroup:
         c_grp = self.c_server.accept(filter)
         return ChannelGroup(c_grp)
 
@@ -104,6 +104,6 @@ class Server:
         return self.c_server.get_socket()
 
 
-def client_connect(path: Path, attr: GroupAttr) -> ChannelGroup:
+def client_connect(path: Path, attr: GroupAttributes) -> ChannelGroup:
     c_grp = c_client_connect(path, attr)
     return ChannelGroup(c_grp)
