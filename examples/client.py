@@ -92,7 +92,7 @@ class Client:
 
     def event_handler(self):
         r = self.chnl_evt.pop()
-        if r != PopResult.SUCCESS and r != PopResult.DSICARDED:
+        if r != PopResult.SUCCESS and r != PopResult.DISCARDED:
             print("event pop failed=" + str(r))
             return
         msg = self.chnl_evt.current_msg()

@@ -2,6 +2,7 @@ import asyncio
 from ctypes import sizeof
 
 from messages import CommandId
+import rpc
 from rpc import MsgCommand, MsgEvent, MsgResponse, server_group_rpc
 
 from pyrtipc import (
@@ -14,12 +15,11 @@ from pyrtipc import (
 
 
 class Rpc:
-    def __init__(self, grp: ChannelGroup, loop):
+    def __init__(self, group: ChannelGroup, loop):
         self.loop = loop
-        self.grp = grp
-        self.chnl_cmd = grp.acquire_consumer(MsgCommand, 0)
-        self.chnl_rsp = grp.acquire_producer(MsgResponse, 0)
-        self.chnl_evt = grp.acquire_producer(MsgEvent, 1)
+        self.chnl_cmd = rpc.server_rpc_acquire_command(group)
+        self.chnl_rsp = rpc.server_rpc_acquire_response(group)
+        self.chnl_evt = rpc.server_rpc_acquire_event(group)
 
         event_cmd = self.chnl_cmd.get_eventfd()
         self.loop.add_reader(event_cmd, self.command_handler)
@@ -96,8 +96,6 @@ class CmdServer:
         await self.listen_future
 
     def filter(self, attr: GroupAttributes) -> bool:
-        print(attr)
-        print(server_group_rpc)
         return attr == server_group_rpc
 
     def connection_handler(self):
