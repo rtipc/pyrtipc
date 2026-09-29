@@ -3,57 +3,61 @@ from asyncio import Future
 from ctypes import sizeof
 from dataclasses import dataclass
 
-from messages import CommandId, MsgCommand, MsgEvent, MsgResponse
+import rpc
+from messages import CommandId
+
+from rpc import (
+    client_group_rpc,
+    CommandArgs,
+    SendEventArgs,
+    DivArgs,
+    MsgCommand,
+    MsgEvent,
+    MsgResponse,
+)
 
 from pyrtipc import ChannelAttributes, GroupAttributes, PopResult, client_connect
 
-producers = [ChannelAttributes(0, sizeof(MsgCommand), True, b"rpc command")]
-consumers = [
-    ChannelAttributes(0, sizeof(MsgResponse), True, b"rpc response"),
-    ChannelAttributes(10, sizeof(MsgEvent), True, b"rpc event"),
-]
-
-attr = GroupAttributes(consumers, producers, b"rpc group")
-
-
-@dataclass
-class Command:
-    id: CommandId
-    args: list[int]
-
 
 command_list = [
-    Command(CommandId.HELLO, [1, 2, 3]),
-    Command(CommandId.SENDEVENT, [11, 20, 0]),
-    Command(CommandId.SENDEVENT, [12, 20, 1]),
-    Command(CommandId.DIV, [100, 7, 0]),
-    Command(CommandId.DIV, [100, 0, 0]),
-    Command(CommandId.STOP, [0, 0, 0]),
+    MsgCommand(id=CommandId.HELLO),
+    MsgCommand(
+        id=CommandId.SENDEVENT,
+        args=CommandArgs(send=SendEventArgs(id=11, force=False, num=20)),
+    ),
+    MsgCommand(
+        id=CommandId.SENDEVENT,
+        args=CommandArgs(send=SendEventArgs(id=12, force=True, num=20)),
+    ),
+    MsgCommand(
+        id=CommandId.DIV, args=CommandArgs(div=DivArgs(divisor=100.0, divident=7.0))
+    ),
+    MsgCommand(
+        id=CommandId.DIV, args=CommandArgs(div=DivArgs(divisor=100.0, divident=0.0))
+    ),
+    MsgCommand(id=CommandId.STOP),
 ]
 
 
 class Client:
     def __init__(self, socket, loop):
         self.loop = loop
-        grp = client_connect(socket, attr)
+        group = client_connect(socket, client_group_rpc)
 
-        self.chnl_cmd = grp.acquire_producer(MsgCommand, 0)
-        self.chnl_rsp = grp.acquire_consumer(MsgResponse, 0)
-        self.chnl_evt = grp.acquire_consumer(MsgEvent, 1)
+        self.chnl_cmd = rpc.client_rpc_acquire_command(group)
+        self.chnl_rsp = rpc.client_rpc_acquire_response(group)
+        self.chnl_evt = rpc.client_rpc_acquire_event(group)
 
         event_rsp = self.chnl_rsp.get_eventfd()
         event_evt = self.chnl_evt.get_eventfd()
         self.loop.add_reader(event_rsp, self.response_handler)
         self.loop.add_reader(event_evt, self.event_handler)
 
-    def send_command(self, cmd: Command):
-        if cmd is None:
-            return
+    def send_command(self, cmd: MsgCommand):
         msg = self.chnl_cmd.current_msg()
+        # msg = cmd doesn't work, because it just replaces the reference
         msg.id = cmd.id
-
-        for i, arg in enumerate(cmd.args):
-            msg.args[i] = arg
+        msg.args = cmd.args
 
         self.chnl_cmd.force_push()
 
@@ -66,7 +70,7 @@ class Client:
     def response_handler(self):
         r = self.chnl_rsp.pop()
 
-        if r != PopResult.SUCCESS and r != PopResult.DICARDED:
+        if r != PopResult.SUCCESS and r != PopResult.DISCARDED:
             print("response pop failed=" + str(r))
             return
 
@@ -88,7 +92,7 @@ class Client:
 
     def event_handler(self):
         r = self.chnl_evt.pop()
-        if r != PopResult.SUCCESS and r != PopResult.DICARDED:
+        if r != PopResult.SUCCESS and r != PopResult.DSICARDED:
             print("event pop failed=" + str(r))
             return
         msg = self.chnl_evt.current_msg()

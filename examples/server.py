@@ -1,7 +1,8 @@
 import asyncio
 from ctypes import sizeof
 
-from messages import CommandId, MsgCommand, MsgEvent, MsgResponse
+from messages import CommandId
+from rpc import MsgCommand, MsgEvent, MsgResponse, server_group_rpc
 
 from pyrtipc import (
     ChannelAttributes,
@@ -10,14 +11,6 @@ from pyrtipc import (
     PopResult,
     Server,
 )
-
-producers = [ChannelAttributes(0, sizeof(MsgCommand), True, b"rpc command")]
-consumers = [
-    ChannelAttributes(0, sizeof(MsgResponse), True, b"rpc response"),
-    ChannelAttributes(10, sizeof(MsgEvent), True, b"rpc event"),
-]
-
-attr = GroupAttributes(consumers, producers, b"rpc group")
 
 
 class Rpc:
@@ -38,7 +31,7 @@ class Rpc:
     def command_handler(self):
         r = self.chnl_cmd.pop()
 
-        if r != PopResult.SUCCESS and r != PopResult.DICARDED:
+        if r != PopResult.SUCCESS and r != PopResult.DISCARDED:
             print("command pop failed=" + str(r))
             return
 
@@ -48,7 +41,6 @@ class Rpc:
         rsp = self.chnl_rsp.current_msg()
         rsp.id = cmd.id
         rsp.result = 0
-        rsp.data = 0
         stop = False
         match cmd.id:
             case CommandId.UNKNOWN:
@@ -58,14 +50,13 @@ class Rpc:
             case CommandId.STOP:
                 stop = True
             case CommandId.SENDEVENT:
-                rsp.result, rsp.data = self.send_events(
-                    cmd.args[0], cmd.args[1], cmd.args[2] != 0
+                rsp.result, _ = self.send_events(
+                    cmd.args.send.id, cmd.args.send.num, cmd.args.send.force
                 )
             case CommandId.DIV:
-                try:
-                    rsp.data = Rpc.divide(cmd.args[0], cmd.args[1])
-                except ZeroDivisionError:
-                    rsp.result = -1
+                rsp.result, rsp.data.quotient = Rpc.divide(
+                    cmd.args.div.divisor, cmd.args.div.divident
+                )
 
         self.chnl_rsp.force_push()
 
@@ -73,12 +64,12 @@ class Rpc:
             self.future.set_result(0)
 
     @staticmethod
-    def divide(a: int, b: int) -> int:
+    def divide(a: float, b: float) -> Tuple[int, float]:
         if b == 0:
-            raise ZeroDivisionError()
-        return int(float(a) / float(b))
+            return -1, 0.0
+        return 0, (float(a) / float(b))
 
-    def send_events(self, id: int, num: int, force: bool) -> int:
+    def send_events(self, id: int, num: int, force: bool) -> Tuple[int, int]:
         for i in range(num):
             msg = self.chnl_evt.current_msg()
             msg.id = id
@@ -105,7 +96,9 @@ class CmdServer:
         await self.listen_future
 
     def filter(self, attr: GroupAttributes) -> bool:
-        return True
+        print(attr)
+        print(server_group_rpc)
+        return attr == server_group_rpc
 
     def connection_handler(self):
         grp = self.server.accept(self.filter)
