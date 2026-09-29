@@ -172,7 +172,7 @@ class CChannelGroup:
             rtipc.ri_group_delete(self._c_group)
 
     @staticmethod
-    def from_attr(attr: GroupAttributes) -> CChannelGroup:
+    def from_attributes(attr: GroupAttributes) -> CChannelGroup:
         cattr = CGroupAttr(attr)
         grp = CChannelGroup()
         grp._c_group = rtipc.ri_group_from_attr(cython.address(cattr.c_grp_attr))
@@ -222,7 +222,7 @@ class CChannelGroup:
 
         n_consumers = rtipc.ri_group_num_consumers(self._c_group)
 
-        n_producers = rtipc.ri_group_num_consumers(self._c_group)
+        n_producers = rtipc.ri_group_num_producers(self._c_group)
 
         return from_c_group_attr(cython.address(c_attr), n_consumers, n_producers)
 

@@ -64,8 +64,8 @@ class ChannelGroup:
         self.c_grp = c_grp
 
     @classmethod
-    def from_attr(cls, attr: GroupAttributes) -> T:
-        c_grp = CChannelGroup.from_attr(attr)
+    def from_attributes(cls, attr: GroupAttributes) -> T:
+        c_grp = CChannelGroup.from_attributes(attr)
         return cls(c_grp)
 
     @classmethod
