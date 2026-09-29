@@ -214,7 +214,7 @@ class CChannelGroup:
 
         return (req, fds[0:n_fds])
 
-    def get_attr(self) -> GroupAttributes:
+    def get_attributes(self) -> GroupAttributes:
         if self._c_group is cython.NULL:
             raise RuntimeError()
 

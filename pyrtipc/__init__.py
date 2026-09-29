@@ -73,8 +73,8 @@ class ChannelGroup:
         c_grp = CChannelGroup.deserialize(req, fds)
         return cls(c_grp)
 
-    def get_attr(self) -> GroupAttributes:
-        return self.c_grp.get_attr()
+    def get_attributes(self) -> GroupAttributes:
+        return self.c_grp.get_attributes()
 
     def serialize(self):
         return self.c_grp.serialize()
