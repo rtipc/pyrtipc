@@ -22,7 +22,7 @@ class TryPushResult(IntEnum):
 class ForcePushResult(IntEnum):
     ERROR = (rtipc.ri_force_push_result_t.RI_FORCE_PUSH_RESULT_ERROR,)
     SUCCESS = (rtipc.ri_force_push_result_t.RI_FORCE_PUSH_RESULT_SUCCESS,)
-    DICARDED = (rtipc.ri_force_push_result_t.RI_FORCE_PUSH_RESULT_DISCARDED,)
+    DISCARDED = (rtipc.ri_force_push_result_t.RI_FORCE_PUSH_RESULT_DISCARDED,)
 
 
 class PopResult(IntEnum):
@@ -30,7 +30,7 @@ class PopResult(IntEnum):
     NO_MSG = (rtipc.ri_pop_result_t.RI_POP_RESULT_NO_MSG,)
     NO_UPDATE = (rtipc.ri_pop_result_t.RI_POP_RESULT_NO_UPDATE,)
     SUCCESS = (rtipc.ri_pop_result_t.RI_POP_RESULT_SUCCESS,)
-    DICARDED = (rtipc.ri_pop_result_t.RI_POP_RESULT_DISCARDED,)
+    DISCARDED = (rtipc.ri_pop_result_t.RI_POP_RESULT_DISCARDED,)
 
 
 @cython.cfunc
